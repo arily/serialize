@@ -6,9 +6,9 @@
   "private": true,
   "devDependencies": {
     "nodemon": "^3.0.1",
-    "ts-macros": "^2.3.1",
+    "ts-macros": "^2.6.0",
     "ts-node": "^10.9.1",
     "ts-patch": "^3.0.2",
-    "typescript": "^5.1.6"
+    "typescript": "^5.2.2"
   }
 }
