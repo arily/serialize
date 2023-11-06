@@ -14,11 +14,15 @@ type Flatten<T extends object> = object extends T
   : never
 
 
-function $serialize<T extends Record<string, any>>(val: T) {
+function $serialize<T extends Record<string, any>>(val: T | {}) {
   return +['[]', [$$propsOfType!<T>()], (key: T[keyof T]) => $$ts!($$text!(val) + "." + key)] as unknown as T
 }
+function $deepSerialize<T extends Record<string, any>>(val: T) {
+  type Ret = Flatten<T>
+  return +['[]', [$$propsOfType!<Ret>()], (key: Ret[keyof Ret]) => $$ts!($$text!(val) + "." + key)] as unknown as Ret
+}
 
-function $deserializeOneLayer<T extends Record<string, any>>(val: readonly T[keyof T][]) {
+function $deserialize<T extends Record<string, any>>(val: readonly T[keyof T][]) {
   return +['{}', [$$propsOfType!<T>()], (some: T[keyof T]) => ["'" + some + "'", val[$$i!()]]] as unknown as T
 }
 
@@ -44,8 +48,8 @@ function $offset<T extends Record<string, any>, TFlatten>(root: TFlatten, key: (
   return +['+', [$$propsOfType!<TFlatten>()], (k: string) => $stringify!($$escape!(key as () => unknown), root) === k ? $$i!() : 0] as unknown as keyof TFlatten
 }
 
-interface StableABI {
-  a: number,
+interface Extern {
+  number: number,
   text: string,
   bool: boolean,
   something: {
@@ -56,24 +60,25 @@ interface StableABI {
   }
 }
 
-const test: StableABI = {
+const test: Extern = {
   something: {
     deep: true,
     very: {
-      deep: 'what?'
+      deep: 'very deep indeed'
     }
   },
-  a: 12,
+  number: 12,
   bool: false,
   text: 'not true',
 }
 
 const sr1 = $serialize!(test)
-const reverse = $deserializeOneLayer!<typeof sr1>(sr1 as any)
+const reverse = $deserialize!<typeof sr1>(sr1 as any)
 
-console.log('text =', reverse.a)
+console.log('text =', reverse.number)
 
-const t = $serialize!(test as unknown as Flatten<StableABI>)
+const tNotWorking = $deepSerialize!(test)
+console.log('t.something.very.deep =', tNotWorking[$offset!<Extern, Flatten<Extern>>(tNotWorking, (t) => t.something.very.deep)])
 
-console.log($$typeToString!<Flatten<StableABI>>())
-console.log('t.something.very.deep =', t[$offset!<StableABI, Flatten<StableABI>>(t, (t) => t.something.very.deep)])
+const t = $serialize!<Flatten<Extern>>(test)
+console.log('t.something.very.deep =', t[$offset!<Extern, Flatten<Extern>>(t, (t) => t.something.very.deep)])
